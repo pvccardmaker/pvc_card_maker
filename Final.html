@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Scanner - Live Preview</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3f37c9;
+    --accent-color: #4cc9f0;
+    --dark-color: #2b2d42;
+    --light-color: #f8f9fa;
+    --success-color: #06ffa5;
+    --danger-color: #f72585;
+    --hover-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
+body{background:linear-gradient(120deg,#f5f7ff,#e0e7ff);color:var(--dark-color);line-height:1.6;transition:all 0.3s;}
+.container{max-width:1200px;margin:0 auto;padding:20px;}
+header{text-align:center;margin-bottom:30px;padding:20px 0;animation:fadeIn 1s ease;}
+header h1{font-size:2.8rem;color:var(--primary-color);margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px;}
+header p{font-size:1.1rem;color:#666;}
+.upload-section{background:white;border-radius:15px;padding:30px;box-shadow:0 10px 25px rgba(0,0,0,0.05);margin-bottom:30px;transition:transform 0.3s;}
+.upload-section:hover{transform:translateY(-5px);}
+.upload-area{border:2px dashed var(--primary-color);border-radius:15px;padding:50px;text-align:center;cursor:pointer;transition:all 0.3s ease;background-color:rgba(67,97,238,0.05);}
+.upload-area:hover{background-color:rgba(67,97,238,0.1);border-color:var(--secondary-color);}
+.upload-area.dragover{background-color:rgba(67,97,238,0.2);border-color:var(--accent-color);}
+.upload-area i{font-size:3.5rem;color:var(--primary-color);margin-bottom:15px;animation:float 2s ease-in-out infinite;}
+.upload-area h3{margin-bottom:10px;color:var(--dark-color);}
+.upload-area p{color:#666;margin-bottom:15px;}
+.file-input{display:none;}
+.btn{display:inline-block;background-color:var(--primary-color);color:white;padding:12px 22px;border-radius:8px;cursor:pointer;border:none;font-size:1rem;transition:all 0.3s ease;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+.btn:hover{background-color:var(--secondary-color);transform:translateY(-3px);box-shadow:var(--hover-shadow);}
+.btn:disabled{background-color:#ccc;cursor:not-allowed;transform:none;box-shadow:none;}
+.processing-options{margin-top:20px;display:flex;flex-wrap:wrap;gap:20px;}
+.option-group{flex:1;min-width:200px;}
+.option-group label{display:block;margin-bottom:5px;font-weight:600;}
+.slider{width:100%;margin-bottom:5px;}
+.slider-value{text-align:right;font-size:0.9rem;color:#666;}
+.image-preview-section{background:white;border-radius:15px;padding:30px;box-shadow:0 10px 25px rgba(0,0,0,0.05);margin-bottom:30px;animation:fadeIn 1s ease;}
+.preview-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:25px;}
+.preview-item{border-radius:15px;overflow:hidden;position:relative;transition:transform 0.3s, box-shadow 0.3s;box-shadow:0 5px 15px rgba(0,0,0,0.05);}
+.preview-item:hover{transform:scale(1.05);box-shadow:var(--hover-shadow);}
+.preview-image{width:100%;height:auto;max-height:500px;object-fit:contain;background-color:#f9f9f9;transition:filter 0.2s, transform 0.3s;}
+.preview-item .icon-indicator{position:absolute;top:10px;right:10px;font-size:1.5rem;color:var(--success-color);display:none;}
+.preview-actions{padding:10px;display:flex;justify-content:space-between;background-color:#f9f9f9;}
+.preview-actions button{padding:6px 12px;font-size:0.85rem;border:none;border-radius:6px;cursor:pointer;transition:all 0.3s;}
+.process-btn{background-color:var(--success-color);color:white;}
+.process-btn:hover{background-color:#05d890;}
+.download-btn{background-color:var(--accent-color);color:white;}
+.download-btn:hover{background-color:#3bb8d8;}
+.remove-btn{background-color:var(--danger-color);color:white;}
+.remove-btn:hover{background-color:#d61570;}
+.processing-indicator{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.7);z-index:1000;justify-content:center;align-items:center;flex-direction:column;}
+.processing-indicator.active{display:flex;}
+.spinner{width:60px;height:60px;border:6px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:white;animation:spin 1s ease-in-out infinite;margin-bottom:15px;}
+@keyframes spin{to{transform:rotate(360deg);} }
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.processing-text{color:white;font-size:1.3rem;font-weight:600;}
+.toast{position:fixed;bottom:30px;right:30px;background-color:var(--dark-color);color:white;padding:15px 25px;border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.2);transform:translateY(100px);opacity:0;transition:all 0.5s ease;z-index:1001;}
+.toast.show{transform:translateY(0);opacity:1;}
+.action-buttons{display:flex;gap:15px;margin-top:25px;}
+@media (max-width:768px){.preview-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}.processing-options{flex-direction:column;}}
+@keyframes fadeIn{0%{opacity:0;transform:translateY(20px);}100%{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+    <h1><i class="fas fa-file-image"></i> Document Scanner</h1>
+    <p>Upload multiple images, adjust settings live, and download the enhanced images</p>
+</header>
+
+<section class="upload-section">
+    <div class="upload-area" id="uploadArea">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <h3>Drag & Drop Images Here</h3>
+        <p>or click to browse files</p>
+        <button class="btn">Select Files</button>
+        <input type="file" id="fileInput" class="file-input" multiple accept="image/*">
+    </div>
+
+    <div class="processing-options">
+        <div class="option-group">
+            <label for="brightness">Brightness</label>
+            <input type="range" id="brightness" class="slider" min="0" max="200" value="100">
+            <div class="slider-value" id="brightnessValue">100%</div>
+        </div>
+        <div class="option-group">
+            <label for="contrast">Contrast</label>
+            <input type="range" id="contrast" class="slider" min="0" max="400" value="100">
+            <div class="slider-value" id="contrastValue">100%</div>
+        </div>
+        <div class="option-group">
+            <label for="grayscale">Grayscale</label>
+            <input type="range" id="grayscale" class="slider" min="0" max="100" value="0">
+            <div class="slider-value" id="grayscaleValue">0%</div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn" id="processAllBtn" disabled>Process All Images</button>
+        <button class="btn" id="downloadAllBtn" disabled>Download All</button>
+        <button class="btn" id="clearAllBtn" disabled>Clear All</button>
+    </div>
+</section>
+
+<section class="image-preview-section" id="previewSection" style="display: none;">
+    <div class="preview-header">
+        <h2>Image Preview</h2>
+        <span id="imageCount">0 images</span>
+    </div>
+    <div class="preview-grid" id="previewGrid"></div>
+</section>
+</div>
+
+<div class="processing-indicator" id="processingIndicator">
+    <div class="spinner"></div>
+    <div class="processing-text">Processing images...</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const previewSection = document.getElementById('previewSection');
+    const previewGrid = document.getElementById('previewGrid');
+    const imageCount = document.getElementById('imageCount');
+    const processAllBtn = document.getElementById('processAllBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const processingIndicator = document.getElementById('processingIndicator');
+    const toast = document.getElementById('toast');
+
+    const brightnessSlider = document.getElementById('brightness');
+    const contrastSlider = document.getElementById('contrast');
+    const grayscaleSlider = document.getElementById('grayscale');
+
+    const brightnessValue = document.getElementById('brightnessValue');
+    const contrastValue = document.getElementById('contrastValue');
+    const grayscaleValue = document.getElementById('grayscaleValue');
+
+    let uploadedImages = [];
+
+    function applyFilters(imageElement){
+        const brightness = brightnessSlider.value/100;
+        const contrast = contrastSlider.value/100;
+        const grayscale = grayscaleSlider.value/100;
+        imageElement.style.filter = `brightness(${brightness}) contrast(${contrast}) grayscale(${grayscale})`;
+    }
+
+    brightnessSlider.addEventListener('input', ()=>{
+        brightnessValue.textContent = brightnessSlider.value+'%';
+        document.querySelectorAll('.preview-image').forEach(img => applyFilters(img));
+    });
+    contrastSlider.addEventListener('input', ()=>{
+        contrastValue.textContent = contrastSlider.value+'%';
+        document.querySelectorAll('.preview-image').forEach(img => applyFilters(img));
+    });
+    grayscaleSlider.addEventListener('input', ()=>{
+        grayscaleValue.textContent = grayscaleSlider.value+'%';
+        document.querySelectorAll('.preview-image').forEach(img => applyFilters(img));
+    });
+
+    uploadArea.addEventListener('click', ()=>fileInput.click());
+    fileInput.addEventListener('change', handleFiles);
+    uploadArea.addEventListener('dragover', e=>{e.preventDefault(); uploadArea.classList.add('dragover');});
+    uploadArea.addEventListener('dragleave', ()=>uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', e=>{
+        e.preventDefault(); uploadArea.classList.remove('dragover');
+        if(e.dataTransfer.files.length) handleFiles({target:{files:e.dataTransfer.files}});
+    });
+
+    processAllBtn.addEventListener('click', processAllImages);
+    downloadAllBtn.addEventListener('click', downloadAllImages);
+    clearAllBtn.addEventListener('click', clearAllImages);
+
+    function handleFiles(e){
+        const files = Array.from(e.target.files);
+        if(files.length===0) return;
+        files.forEach(file=>{
+            if(!file.type.match('image.*')) { showToast(`${file.name} is not an image`, 'error'); return; }
+            const reader = new FileReader();
+            reader.onload = event=>{
+                const img = new Image();
+                img.onload = ()=>{
+                    const imageData = {
+                        id: Date.now()+Math.random(),
+                        file:file,
+                        originalSrc:event.target.result,
+                        processedSrc:null,
+                        img:img,
+                        processed:false
+                    };
+                    uploadedImages.push(imageData);
+                    addPreviewItem(imageData);
+                    updateUI();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+        fileInput.value='';
+    }
+
+    function addPreviewItem(imageData){
+        const previewItem=document.createElement('div');
+        previewItem.className='preview-item';
+        previewItem.dataset.id=imageData.id;
+        previewItem.innerHTML=`
+            <img src="${imageData.originalSrc}" class="preview-image" alt="Preview">
+            <i class="fas fa-check-circle icon-indicator"></i>
+            <div class="preview-actions">
+                <button class="process-btn" data-id="${imageData.id}">Process</button>
+                <button class="download-btn" data-id="${imageData.id}" disabled>Download</button>
+                <button class="remove-btn" data-id="${imageData.id}">Remove</button>
+            </div>
+        `;
+        previewGrid.appendChild(previewItem);
+
+        previewItem.querySelector('.process-btn').addEventListener('click', ()=>processImage(imageData.id));
+        previewItem.querySelector('.download-btn').addEventListener('click', ()=>downloadImage(imageData.id));
+        previewItem.querySelector('.remove-btn').addEventListener('click', ()=>removeImage(imageData.id));
+    }
+
+    function processImage(id){
+        const imageData = uploadedImages.find(img=>img.id===id);
+        if(!imageData) return;
+        processingIndicator.classList.add('active');
+        setTimeout(()=>{
+            const canvas=document.createElement('canvas');
+            const ctx=canvas.getContext('2d');
+            canvas.width=imageData.img.width;
+            canvas.height=imageData.img.height;
+
+            const brightness = brightnessSlider.value/100;
+            const contrast = contrastSlider.value/100;
+            const grayscale = grayscaleSlider.value/100;
+
+            ctx.filter = `brightness(${brightness}) contrast(${contrast}) grayscale(${grayscale})`;
+            ctx.drawImage(imageData.img,0,0,canvas.width,canvas.height);
+
+            imageData.processedSrc = canvas.toDataURL('image/jpeg',0.95);
+            imageData.processed=true;
+
+            const previewItem=document.querySelector(`.preview-item[data-id="${id}"]`);
+            previewItem.querySelector('.preview-image').src=imageData.processedSrc;
+            previewItem.querySelector('.download-btn').disabled=false;
+            previewItem.querySelector('.icon-indicator').style.display='block';
+
+            processingIndicator.classList.remove('active');
+            showToast('Image processed successfully','success');
+            updateUI();
+        },100);
+    }
+
+    function processAllImages(){
+        const unprocessedImages = uploadedImages.filter(img=>!img.processed);
+        if(unprocessedImages.length===0){ showToast('All images are already processed','info'); return; }
+        processingIndicator.classList.add('active');
+        unprocessedImages.forEach(img=> processImage(img.id) );
+        processingIndicator.classList.remove('active');
+        showToast(`${unprocessedImages.length} images processed successfully`, 'success');
+    }
+
+    function downloadImage(id){
+        const imageData = uploadedImages.find(img=>img.id===id);
+        if(!imageData || !imageData.processed) return;
+        const link=document.createElement('a');
+        link.href=imageData.processedSrc;
+        link.download=`processed_${imageData.file.name}`;
+        link.click();
+    }
+
+    async function downloadAllImages(){
+        const processedImages = uploadedImages.filter(img=>img.processed);
+        if(processedImages.length===0){ showToast('No processed images to download','error'); return; }
+
+        const zip = new JSZip();
+        processedImages.forEach(img=>{
+            const base64Data = img.processedSrc.replace(/^data:image\/(png|jpeg);base64,/,"");
+            zip.file(`processed_${img.file.name}`, base64Data, {base64:true});
+        });
+
+        const content = await zip.generateAsync({type:"blob"});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = 'processed_images.zip';
+        link.click();
+        showToast(`${processedImages.length} images downloaded`, 'success');
+    }
+
+    function removeImage(id){
+        uploadedImages = uploadedImages.filter(img=>img.id!==id);
+        document.querySelector(`.preview-item[data-id="${id}"]`)?.remove();
+        showToast('Image removed','info');
+        updateUI();
+    }
+
+    function clearAllImages(){
+        if(uploadedImages.length===0) return;
+        if(confirm('Are you sure you want to remove all images?')){
+            uploadedImages=[];
+            previewGrid.innerHTML='';
+            showToast('All images removed','info');
+            updateUI();
+        }
+    }
+
+    function updateUI(){
+        previewSection.style.display=uploadedImages.length>0?'block':'none';
+        imageCount.textContent=`${uploadedImages.length} image${uploadedImages.length!==1?'s':''}`;
+        processAllBtn.disabled=uploadedImages.length===0;
+        downloadAllBtn.disabled=!uploadedImages.some(img=>img.processed);
+        clearAllBtn.disabled=uploadedImages.length===0;
+    }
+
+    function showToast(msg,type='info'){
+        toast.textContent=msg;
+        toast.className='toast show';
+        if(type==='error'){ toast.style.backgroundColor='#f72585'; toast.style.color='white'; }
+        else if(type==='success'){ toast.style.backgroundColor='#06ffa5'; toast.style.color='#333'; }
+        else{ toast.style.backgroundColor='#2b2d42'; toast.style.color='white'; }
+        setTimeout(()=>toast.classList.remove('show'),3000);
+    }
+});
+</script>
+</body>
+</html>
