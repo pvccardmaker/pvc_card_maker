@@ -189,13 +189,13 @@
 
                 const leftCanvas = document.createElement("canvas"); 
                 leftCanvas.width = Math.ceil(width / 2.45); 
-                leftCanvas.height = bottomCropHeight / 1.4; 
+                leftCanvas.height = bottomCropHeight / 1.37; 
                 const leftCtx = leftCanvas.getContext("2d"); 
                 leftCtx.drawImage(image, startX, bottomCropY + 7, Math.ceil(width / 2), bottomCropHeight, 0, 0, Math.ceil(width / 2), bottomCropHeight);
 
                 const rightCanvas = document.createElement("canvas"); 
                 rightCanvas.width = Math.ceil(width / 2.45); 
-                rightCanvas.height = bottomCropHeight / 1.4; 
+                rightCanvas.height = bottomCropHeight / 1.37; 
                 const rightCtx = rightCanvas.getContext("2d"); 
                 rightCtx.drawImage(image, Math.ceil(width / 2) + 25, bottomCropY + 5, Math.ceil(width / 2), bottomCropHeight, 0, 0, Math.ceil(width / 2), bottomCropHeight);
 
@@ -261,3 +261,4 @@
 </body> 
 
 </html>
+
