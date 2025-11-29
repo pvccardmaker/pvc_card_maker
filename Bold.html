@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVC Card Text Bolder</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 900px;
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        /* Sliders Section */
+        .controls-box {
+            padding: 15px;
+            background: #f1f5ff;
+            border-left: 4px solid #3660d6;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .slider {
+            width: 100%;
+        }
+        
+        .upload-area {
+            border: 2px dashed #4a90e2;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #4a90e2;
+            margin-bottom: 15px;
+        }
+        
+        .upload-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .preview-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 20px;
+            display: none;
+        }
+        
+        .preview-box {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-container {
+            text-align: center;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .download-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .photo-selection {
+            display: none;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .photo-selection canvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 100%;
+            cursor: crosshair;
+        }
+
+        .selection-controls {
+            margin-top: 10px;
+        }
+
+        .selection-controls button {
+            margin: 0 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .clear-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .undo-btn {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .confirm-btn {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PVC Card Text Bolder</h1>
+        <p class="subtitle">Upload a PVC card image to bold all text while preserving the photo</p>
+
+        <!-- 🔥 TEXT BOLDNESS + CLARITY CONTROLS -->
+        <div class="controls-box">
+            <div class="control-group">
+                <label class="control-label">Boldness (Thickness)</label>
+                <input type="range" id="boldnessSlider" min="0" max="2" step="0.1" value="0.5" class="slider">
+                <span id="boldnessValue"><b>0.5</b></span>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Clarity (Contrast)</label>
+                <input type="range" id="claritySlider" min="0" max="100" value="30" class="slider">
+                <span id="clarityValue"><b>30</b></span>
+            </div>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <button class="upload-btn" id="browseBtn">Browse File</button>
+            <input type="file" id="fileInput" class="file-input" accept="image/*" hidden>
+        </div>
+
+        <div class="photo-selection" id="photoSelection">
+            <p>Select the passport photo by drawing a rectangle:</p>
+            <canvas id="photoCanvas"></canvas>
+            <div class="selection-controls">
+                <button id="clearSelectionBtn" class="clear-btn">Clear All</button>
+                <button id="undoSelectionBtn" class="undo-btn">Undo Last</button>
+                <button id="confirmSelectionBtn" class="confirm-btn">Confirm</button>
+            </div>
+        </div>
+
+        <div class="preview-container" id="previewContainer">
+            <div class="preview-box">
+                <div>Original</div>
+                <img id="originalPreview" class="preview-image">
+            </div>
+            <div class="preview-box">
+                <div>Processed</div>
+                <img id="processedPreview" class="preview-image">
+            </div>
+        </div>
+
+        <div class="download-container" id="downloadContainer">
+            <button class="download-btn" id="downloadBtn">Download Processed Image</button>
+        </div>
+
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const boldnessSlider = document.getElementById('boldnessSlider');
+    const claritySlider = document.getElementById('claritySlider');
+    const boldnessValue = document.getElementById('boldnessValue');
+    const clarityValue = document.getElementById('clarityValue');
+
+    boldnessSlider.oninput = () => boldnessValue.innerHTML = "<b>" + parseFloat(boldnessSlider.value).toFixed(1) + "</b>";
+    claritySlider.oninput = () => clarityValue.innerHTML = "<b>" + claritySlider.value + "</b>";
+
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const browseBtn = document.getElementById('browseBtn');
+
+    const photoSelection = document.getElementById('photoSelection');
+    const photoCanvas = document.getElementById('photoCanvas');
+    const photoCtx = photoCanvas.getContext('2d');
+
+    const previewContainer = document.getElementById('previewContainer');
+    const originalPreview = document.getElementById('originalPreview');
+    const processedPreview = document.getElementById('processedPreview');
+
+    const downloadContainer = document.getElementById('downloadContainer');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let originalImage = null;
+    let photoAreas = []; // Array to store multiple photo areas
+    let isDrawing = false;
+    let startX, startY;
+    let processedImageData;
+
+    browseBtn.onclick = () => fileInput.click();
+    fileInput.onchange = e => handleFile(e.target.files[0]);
+
+    uploadArea.ondragover = e => { e.preventDefault(); }
+    uploadArea.ondrop = e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); };
+
+    photoCanvas.onmousedown = startDrawing;
+    photoCanvas.onmousemove = draw;
+    photoCanvas.onmouseup = endDrawing;
+    photoCanvas.onmouseout = endDrawing;
+
+    document.getElementById('clearSelectionBtn').onclick = () => {
+        photoAreas = [];
+        redrawCanvas();
+    };
+
+    document.getElementById('undoSelectionBtn').onclick = () => {
+        if (photoAreas.length > 0) {
+            photoAreas.pop();
+            redrawCanvas();
+        }
+    };
+
+    document.getElementById('confirmSelectionBtn').onclick = () => {
+        if (photoAreas.length === 0) return alert("Select at least one photo area.");
+        processImage();
+    };
+
+    document.getElementById('downloadBtn').onclick = () => {
+        const a = document.createElement("a");
+        a.href = processedImageData;
+        a.download = "pvc-bold.png";
+        a.click();
+    };
+
+    function handleFile(file) {
+        if (!file.type.includes("image")) return alert("Upload an image!");
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                originalImage = img;
+                originalPreview.src = e.target.result;
+
+                photoCanvas.width = img.width;
+                photoCanvas.height = img.height;
+                photoCtx.drawImage(img, 0, 0);
+
+                photoSelection.style.display = "block";
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        const rect = photoCanvas.getBoundingClientRect();
+        startX = (e.clientX - rect.left) * (photoCanvas.width / rect.width);
+        startY = (e.clientY - rect.top) * (photoCanvas.height / rect.height);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const rect = photoCanvas.getBoundingClientRect();
+        let x = (e.clientX - rect.left) * (photoCanvas.width / rect.width);
+        let y = (e.clientY - rect.top) * (photoCanvas.height / rect.height);
+
+        redrawCanvas();
+        
+        // Draw current rectangle
+        photoCtx.strokeStyle = "red";
+        photoCtx.lineWidth = 2;
+        photoCtx.strokeRect(startX, startY, x - startX, y - startY);
+    }
+
+    function endDrawing(e) {
+        if (!isDrawing) return;
+        isDrawing = false;
+
+        const rect = photoCanvas.getBoundingClientRect();
+        let x = (e.clientX - rect.left) * (photoCanvas.width / rect.width);
+        let y = (e.clientY - rect.top) * (photoCanvas.height / rect.height);
+
+        // Add new photo area
+        photoAreas.push({
+            x: Math.min(startX, x),
+            y: Math.min(startY, y),
+            width: Math.abs(x - startX),
+            height: Math.abs(y - startY)
+        });
+        
+        redrawCanvas();
+    }
+
+    function redrawCanvas() {
+        // Clear canvas and redraw original image
+        photoCtx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
+        photoCtx.drawImage(originalImage, 0, 0);
+        
+        // Redraw all selected areas
+        photoCtx.strokeStyle = "red";
+        photoCtx.lineWidth = 2;
+        photoAreas.forEach(area => {
+            photoCtx.strokeRect(area.x, area.y, area.width, area.height);
+        });
+    }
+
+    function processImage() {
+        let boldness = parseFloat(boldnessSlider.value);
+        let clarity = parseInt(claritySlider.value);
+
+        canvas.width = originalImage.width;
+        canvas.height = originalImage.height;
+        ctx.drawImage(originalImage, 0, 0);
+
+        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let data = imageData.data;
+
+        // Convert to grayscale
+        let grayscale = [];
+        for (let i = 0; i < data.length; i += 4) {
+            const g = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+            grayscale.push(g);
+        }
+
+        // Dynamic threshold based on clarity
+        let avg = grayscale.reduce((a,b)=>a+b,0) / grayscale.length;
+        let threshold = avg * (0.85 - clarity/100 * 0.5);
+
+        let mask = new Uint8ClampedArray(grayscale.length);
+        for (let i = 0; i < grayscale.length; i++) {
+            mask[i] = grayscale[i] < threshold ? 1 : 0;
+        }
+
+        // Protect all photo areas
+        for (let area of photoAreas) {
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    if (x >= area.x && x <= area.x + area.width &&
+                        y >= area.y && y <= area.y + area.height) {
+                        mask[y * canvas.width + x] = 0;
+                    }
+                }
+            }
+        }
+
+        // Convert boldness to integer for dilation (0-2 becomes 0-2 pixels)
+        let dilationRadius = Math.round(boldness);
+        mask = dilate(mask, canvas.width, canvas.height, dilationRadius);
+
+        for (let i = 0; i < mask.length; i++) {
+            if (mask[i] === 1) {
+                let px = i * 4;
+                data[px] *= 0.3;
+                data[px+1] *= 0.3;
+                data[px+2] *= 0.3;
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        processedImageData = canvas.toDataURL("image/png");
+        processedPreview.src = processedImageData;
+
+        previewContainer.style.display = "flex";
+        downloadContainer.style.display = "block";
+    }
+
+    function dilate(mask, w, h, r) {
+        let out = new Uint8ClampedArray(mask.length);
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                if (mask[y*w + x] === 1) {
+                    for (let dy = -r; dy <= r; dy++) {
+                        for (let dx = -r; dx <= r; dx++) {
+                            let nx = x + dx, ny = y + dy;
+                            if (nx>=0 && nx<w && ny>=0 && ny<h) {
+                                out[ny*w + nx] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return out;
+    }
+});
+</script>
+
+</body>
+</html>
